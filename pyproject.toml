@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "<package name>"
-description = "<package description>"
+name = "mojo-networking"
+description = "Automation Mojo Netorking Package (mojo-networking)"
 version = "0.0.1"
 authors = []
 readme = "README.md"

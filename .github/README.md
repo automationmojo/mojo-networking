@@ -1,10 +1,3 @@
-# Python Package Template
+# Automation Mojo Netorking Package (mojo-networking)
 
-This is a template repository that can be used to start off a python package project.
-
-# Features of this Template
-
-* Machine Setup
-* Virtual Environment Setup (Poetry)
-* PyPi Publishing
-* Sphinx Documentation
+This repository contains modules and functions to support TCP and UDP networking interop and protocols.

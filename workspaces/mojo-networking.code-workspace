@@ -1,0 +1,24 @@
+{
+    "folders": [
+        {
+            "path": "../"
+        }
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": "/home/myron/repos/mojo-networking/.venv/bin/python3.10",
+        "python.envFile": "/home/myron/repos/mojo-networking/.cache/development.env",
+        "terminal.integrated.env.linux": {
+            "PYTHONPATH": "/home/myron/repos/mojo-networking/source/packages"
+        },
+        "terminal.integrated.profiles.linux": {
+            "virtual-env": {
+                "path": "/home/myron/repos/mojo-networking/.venv/bin/activate"
+            }
+        },
+        "python.analysis.extraPaths": [
+            "/home/myron/repos/mojo-networking/.venv/lib/python3.10/site-packages",
+            "/home/myron/repos/mojo-networking/source/packages"
+        ],
+        "python.terminal.activateEnvInCurrentTerminal": true
+    }
+}

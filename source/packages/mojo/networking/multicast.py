@@ -21,9 +21,9 @@ import errno
 import socket
 import struct
 
-from mojo.xmods.networking.constants import IPPROTO_IPV6, SO_RECV_ANYIF
-from mojo.xmods.networking.interfaces import get_ipv4_address
-from mojo.xmods.networking.interfaces import get_ipv6_address
+from mojo.networking.constants import IPPROTO_IPV6, SO_RECV_ANYIF
+from mojo.networking.interfaces import get_ipv4_address
+from mojo.networking.interfaces import get_ipv6_address
 
 
 def create_multicast_socket(multicast_addr: str, port: int, bind_addr: str='', family: socket.AddressFamily = socket.AF_INET,

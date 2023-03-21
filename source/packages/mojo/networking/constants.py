@@ -49,10 +49,6 @@ else:
     # https://opensource.apple.com/source/xnu/xnu-4570.41.2/bsd/sys/socket.h
     SO_RECV_ANYIF = 0x1104
 
-class AKitHttpHeaders:
-    USER_AGENT = "AutomationKit/1.0 Automation Kit Test Framework"
-    SERVER = "{},{},AutomationKit/1.0".format(platform.system(), platform.release())
-
 class RegisteredMulticastAddresses:
     """
         https://www.iana.org/assignments/multicast-addresses/multicast-addresses.xhtml

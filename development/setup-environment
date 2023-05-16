@@ -69,8 +69,6 @@ fi
 # -------------------------------------------------------------------------------------------
 function customize_activate_script() {
     
-    ACTIVATE_SCRIPT="$VIRTUAL_ENV_DIR/bin/activate"
-
     echo "# ================ Development Environment Customizations ================"
     echo ""  >> $ACTIVATE_SCRIPT
     echo "if [ -f $ENV_FILE ]" >> $ACTIVATE_SCRIPT
@@ -85,17 +83,20 @@ function customize_activate_script() {
     COMMAND_ALIAS=""
     CUSTOM_CLI_ENTRY_SCRIPT=""
 
-    if [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ]; then
-
-        if [ ! -z "$COMMAND_ALIAS" && ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ]; then
-            echo "# Create an alias for the `$COMMAND_ALIAS` command" >> $ACTIVATE_SCRIPT
-            echo "alias $COMMAND_ALIAS=\"python3 $CUSTOM_CLI_ENTRY_SCRIPT\"" >> $ACTIVATE_SCRIPT
+    if [ ! -z "$COMMAND_ALIAS" ] || [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ];
+    then
+        if [ ! -z "$COMMAND_ALIAS" ] && [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ];
+        then
+            echo "# Create an alias for the $COMMAND_ALIAS command" >> $ACTIVATE_SCRIPT
+            echo "function $COMMAND_ALIAS () {" >> $ACTIVATE_SCRIPT
+            echo "    \"$VIRTUAL_ENV_BIN_DIR/python3\" \"$CUSTOM_CLI_ENTRY_SCRIPT\" \$@ " >> $ACTIVATE_SCRIPT
+            echo "}"  >> $ACTIVATE_SCRIPT
+            echo "export -f $COMMAND_ALIAS"  >> $ACTIVATE_SCRIPT
             echo ""  >> $ACTIVATE_SCRIPT
-        else
-            echo "To add a custom commandline, you must set both 'COMMAND_ALIAS' and 'CUSTOM_CLI_ENTRY_SCRIPT'"
-            exit 1
         fi
-
+    else
+        echo "To add a custom commandline, you must set both 'COMMAND_ALIAS' and 'CUSTOM_CLI_ENTRY_SCRIPT'"
+        exit 1
     fi
     
 }
@@ -118,7 +119,7 @@ if [ ! -f $INITIALIZED_FILE ]; then
         exit 1
     fi
 
-    poetry update
+    poetry update --no-cache
 
     popd
 
@@ -131,3 +132,4 @@ else
 fi
 
 echo "---------------------------------------------------------------------------------------"
+

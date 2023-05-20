@@ -100,12 +100,11 @@ function customize_activate_script() {
             echo "}"  >> $ACTIVATE_SCRIPT
             echo "export -f $CUSTOM_CLI_ALIAS"  >> $ACTIVATE_SCRIPT
             echo ""  >> $ACTIVATE_SCRIPT
+        else
+            echo "To add a custom commandline, you must set both 'CUSTOM_CLI_ALIAS' and 'CUSTOM_CLI_ENTRY_SCRIPT'"
+            exit 1
         fi
-    else
-        echo "To add a custom commandline, you must set both 'CUSTOM_CLI_ALIAS' and 'CUSTOM_CLI_ENTRY_SCRIPT'"
-        exit 1
     fi
-    
 }
 
 # -------------------------------------------------------------------------------------------

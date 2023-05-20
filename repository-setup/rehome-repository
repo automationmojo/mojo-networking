@@ -7,7 +7,7 @@ import shutil
 import sys
 import subprocess
 
-REPOSITORY_NAME="(Not Set)"
+PROJECT_NAME="(Not Set)"
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 THIS_MODULE = sys.modules[__name__]
@@ -28,8 +28,8 @@ if os.path.exists(REPOSITORY_CONFIG_FILE):
     if "DEFAULT" in config:
         default_config = config["DEFAULT"]
 
-        if "REPOSITORY_NAME" in default_config:
-            REPOSITORY_NAME = default_config["REPOSITORY_NAME"]
+        if "PROJECT_NAME" in default_config:
+            PROJECT_NAME = default_config["PROJECT_NAME"]
 
         if "PYTHON_VERSION" in default_config:
             PYTHON_VERSION = default_config["PYTHON_VERSION"]

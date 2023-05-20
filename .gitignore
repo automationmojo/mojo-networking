@@ -131,4 +131,4 @@ dmypy.json
 
 # Project Specific Ignores
 .cache
-workspaces/**/*.code-workspace
+*.code-workspace

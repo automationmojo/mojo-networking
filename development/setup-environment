@@ -26,9 +26,10 @@ if [ ! -d $CACHE_DIR ]; then
     mkdir $CACHE_DIR
 fi
 
-REQUIREMENTS_FILE="$REPOSITORY_DIR/source/requirements.txt"
 INITIALIZED_FILE="$CACHE_DIR/initialized"
+REPOSITORY_CONFIG_INI_FILE="$RESPOSITORY_DIR/repository-setup/repository-config.ini"
 VIRTUAL_ENV_DIR="$REPOSITORY_DIR/.venv"
+VIRTUAL_ENV_BIN_DIR="$VIRTUAL_ENV_DIR/bin"
 
 ENV_FILE="$REPOSITORY_DIR/.env"
 if [ ! -f $ENV_FILE ]; then
@@ -39,9 +40,13 @@ fi
 
 echo "ENV_FILE=$ENV_FILE"
 
+CUSTOM_CLI_ALIAS=""
+CUSTOM_CLI_ENTRY_SCRIPT=""
+PROJECT_NAME=""
 PYTHON_VERSION=""
 
 source $ENV_FILE
+source (grep --color=never -E "^[\s]*[A-Za-z_]+[A-Za-z_0-9]*=" "$REPOSITORY_CONFIG_INI_FILE")
 
 # The PYTHON_VERSION can be pinned in the development environment config
 if [ -z "$PYTHON_VERSION" ]
@@ -51,8 +56,13 @@ then
     exit 1
 fi
 
+echo "CUSTOM_CLI_ALIAS=$CUSTOM_CLI_ALIAS"
+echo "CUSTOM_CLI_ENTRY_SCRIPT=$CUSTOM_CLI_ENTRY_SCRIPT"
+echo "PROJECT_NAME=$PROJECT_NAME"
 echo "PYTHON_VERSION=$PYTHON_VERSION"
 echo "VIRTUAL_ENV_DIR=$VIRTUAL_ENV_DIR"
+echo "VIRTUAL_ENV_BIN_DIR=$VIRTUAL_ENV_BIN_DIR"
+
 echo "---------------------------------------------------------------------------------------"
 
 
@@ -79,23 +89,20 @@ function customize_activate_script() {
     echo "fi" >> $ACTIVATE_SCRIPT
     echo "" >> $ACTIVATE_SCRIPT
 
-    # Custom commandline addition
-    COMMAND_ALIAS=""
-    CUSTOM_CLI_ENTRY_SCRIPT=""
-
-    if [ ! -z "$COMMAND_ALIAS" ] || [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ];
+    # Check for custom commandline additions
+    if [ ! -z "$CUSTOM_CLI_ALIAS" ] || [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ];
     then
-        if [ ! -z "$COMMAND_ALIAS" ] && [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ];
+        if [ ! -z "$CUSTOM_CLI_ALIAS" ] && [ ! -z "$CUSTOM_CLI_ENTRY_SCRIPT" ];
         then
-            echo "# Create an alias for the $COMMAND_ALIAS command" >> $ACTIVATE_SCRIPT
-            echo "function $COMMAND_ALIAS () {" >> $ACTIVATE_SCRIPT
+            echo "# Create an alias for the $CUSTOM_CLI_ALIAS command" >> $ACTIVATE_SCRIPT
+            echo "function $CUSTOM_CLI_ALIAS () {" >> $ACTIVATE_SCRIPT
             echo "    \"$VIRTUAL_ENV_BIN_DIR/python3\" \"$CUSTOM_CLI_ENTRY_SCRIPT\" \$@ " >> $ACTIVATE_SCRIPT
             echo "}"  >> $ACTIVATE_SCRIPT
-            echo "export -f $COMMAND_ALIAS"  >> $ACTIVATE_SCRIPT
+            echo "export -f $CUSTOM_CLI_ALIAS"  >> $ACTIVATE_SCRIPT
             echo ""  >> $ACTIVATE_SCRIPT
         fi
     else
-        echo "To add a custom commandline, you must set both 'COMMAND_ALIAS' and 'CUSTOM_CLI_ENTRY_SCRIPT'"
+        echo "To add a custom commandline, you must set both 'CUSTOM_CLI_ALIAS' and 'CUSTOM_CLI_ENTRY_SCRIPT'"
         exit 1
     fi
     
@@ -129,6 +136,7 @@ if [ ! -f $INITIALIZED_FILE ]; then
 
 else
     echo "Virtual environment already intialized..."
+
 fi
 
 echo "---------------------------------------------------------------------------------------"

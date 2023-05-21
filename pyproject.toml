@@ -1,8 +1,10 @@
 [tool.poetry]
 name = "mojo-networking"
 description = "Automation Mojo Netorking Package (mojo-networking)"
-version = "0.0.6"
-authors = []
+version = "0.0.7"
+authors = [
+    "Myron Walker <myron.walker@gmail.com>"
+]
 readme = "README.md"
 license = "LICENSE.txt"
 classifiers = [

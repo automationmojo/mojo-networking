@@ -17,6 +17,9 @@ keywords = [
 ]
 packages = [{include="mojo", from="source/packages"}]
 
+homepage = "http://automationmojo.com"
+repository = "https://github.com/automationmojo/mojo-networking"
+
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 netifaces = "^0.11.0"

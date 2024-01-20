@@ -23,7 +23,7 @@ repository = "https://github.com/automationmojo/mojo-networking"
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
 netifaces = "^0.11.0"
-requests = "<=2.29.0"
+requests = "<=2.31.0"
 
 [tool.poetry.group.dev.dependencies]
 myst-parser = "^0.18.1"

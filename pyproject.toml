@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "mojo-networking"
 description = "Automation Mojo Netorking Package (mojo-networking)"
-version = "0.0.7"
+version = "1.3.0"
 authors = [
     "Myron Walker <myron.walker@gmail.com>"
 ]

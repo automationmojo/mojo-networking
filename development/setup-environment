@@ -57,12 +57,20 @@ then
     exit 1
 fi
 
+# The EXTRA_POETRY_SETUP_FLAGS are used to pass extra files that can be used to
+# tune the environment setup such as not installing development packages
+if [ -z "$EXTRA_POETRY_SETUP_FLAGS" ]
+then
+    export EXTRA_POETRY_SETUP_FLAGS=""
+fi
+
 echo "CUSTOM_CLI_ALIAS=$CUSTOM_CLI_ALIAS"
 echo "CUSTOM_CLI_ENTRY_SCRIPT=$CUSTOM_CLI_ENTRY_SCRIPT"
 echo "PROJECT_NAME=$PROJECT_NAME"
 echo "PYTHON_VERSION=$PYTHON_VERSION"
 echo "VIRTUAL_ENV_DIR=$VIRTUAL_ENV_DIR"
 echo "VIRTUAL_ENV_BIN_DIR=$VIRTUAL_ENV_BIN_DIR"
+echo "EXTRA_POETRY_SETUP_FLAGS=$EXTRA_POETRY_SETUP_FLAGS"
 
 echo "---------------------------------------------------------------------------------------"
 
@@ -127,7 +135,7 @@ if [ ! -f $INITIALIZED_FILE ]; then
         exit 1
     fi
 
-    poetry update --no-cache
+    poetry install --no-cache $EXTRA_POETRY_SETUP_FLAGS
 
     popd
 

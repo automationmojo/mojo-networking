@@ -23,6 +23,50 @@ import os
 
 ARPING_RANGE_CMD = """/bin/bash -c 'for i in {1..254} ;do ping %s.$i -w 5 -c 1 > /dev/null 2>&1 & echo "%s.$i" & done; wait < <(jobs -p); echo Done' """
 
+from mojo.networking.constants import CHARSET_IPV6_ADDR, REGEX_IPV4_COMPONENTS, REGEX_IPV6_COMPONENTS
+
+
+def expand_ipv6_addr(addr: str) -> str:
+    """
+        Expand the wildcard '::' in an IPv6 address.
+    """
+    expanded = addr
+
+    # If we see '::' expand it, there should be only one
+    double_colon_count = addr.count("::")
+    if double_colon_count > 1:
+        errmsg = f"Invalid IPv6 address which contains more than one wildcard '::'.  addr={addr}"
+        raise ValueError(errmsg)
+    elif double_colon_count == 1:
+        before_colons, after_colons = addr.split("::")
+
+        if before_colons == "":
+            after_parts = after_colons.split(":")
+            after_parts_len = len(after_parts)
+            fill_part_count = 8 - after_parts_len
+            fill_comp = [ nc for nc in '0' * fill_part_count ]
+            expanded = ":".join(fill_comp) + ":" + after_colons
+
+        elif after_colons == "":
+            before_parts = before_colons.split(":")
+            before_parts_len = len(before_parts)
+            fill_part_count = 8 - before_parts_len
+            fill_comp = [ nc for nc in '0' * fill_part_count ]
+            expanded = before_colons + ":" + ":".join(fill_comp)
+
+        else:
+            after_parts = after_colons.split(":")
+            after_parts_len = len(after_parts)
+            before_parts = before_colons.split(":")
+            before_parts_len = len(before_parts)
+
+            fill_part_count = 8 - (after_parts_len + before_parts_len)
+            fill_comp = [ nc for nc in '0' * fill_part_count ]
+            expanded = before_colons + ":" + ":".join(fill_comp) + ":" + after_colons
+
+    return expanded
+
+
 def get_arp_table(normalize_hwaddr: bool=False):
     arp_table = {}
 
@@ -37,6 +81,61 @@ def get_arp_table(normalize_hwaddr: bool=False):
             arp_table.update(iinfo)
 
     return arp_table
+
+
+def is_ipv4_address(candidate: str) -> bool:
+    """
+        Checks to see if 'candidate' is an ipv4 address.
+
+        :param candidate: A string that is to be checked to see if it is a valid IPv4 address.
+
+        :returns: A boolean indicating if an IP address is an IPv4 address
+    """
+    is_ipv4 = False
+
+    # The regex will ensure that all the component characters are integer characters
+    # and that we have the correct number of components.
+    mobj = REGEX_IPV4_COMPONENTS.match(candidate)
+    if mobj is not None:
+        addr_components = [ v for v in mobj.groups() ]
+        if len(addr_components) == 4:
+            is_ipv4 = True
+            for nc in addr_components:
+                cval = int(nc)
+                if cval < 0 or cval > 255:
+                    is_ipv4 = False
+                    break
+
+    return is_ipv4
+
+
+def is_ipv6_address(candidate: str) -> bool:
+    """
+        Checks to see if 'candidate' is an ipv6 address.
+
+        :param candidate: A string that is to be checked to see if it is a valid IPv6 address.
+
+        :returns: A boolean indicating if an IP address is an IPv6 address
+    """
+    is_ipv6 = False
+
+    candidate = expand_ipv6_addr(candidate)
+    
+    # The regex will ensure that all the component characters are integer characters
+    # and that we have the correct number of components.
+    mobj = REGEX_IPV6_COMPONENTS.match(candidate)
+    if mobj is not None:
+        addr_components = [ v for v in mobj.groups() ]
+        if len(addr_components) == 8:
+            is_ipv6 = True
+            for nc in addr_components:
+                cval = int(nc, base=16)
+                if cval < 0 or cval > 65535:
+                    is_ipv6 = False
+                    break
+
+    return is_ipv6
+
 
 def refresh_arp_table(exclude_interfaces: List=["lo"], include_interfaces: Optional[List[str]]=None):
     """
@@ -64,6 +163,7 @@ def refresh_arp_table(exclude_interfaces: List=["lo"], include_interfaces: Optio
                     os.system(ping_cmd)
 
     return
+
 
 if __name__ == "__main__":
     refresh_arp_table()

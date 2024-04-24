@@ -16,6 +16,7 @@ __status__ = "Development" # Prototype, Development or Production
 __license__ = "MIT"
 
 import platform
+import re
 import socket
 
 HTTP1_1_LINESEP = b"\r\n"
@@ -42,6 +43,12 @@ UPNP_GROUP_ORG_ADDR6 = 'FF08::1'
 UPNP_GROUP_GLOBAL_ADDR6 = 'FF0E::1'
 
 UPNP_PORT = 1900
+
+
+CHARSET_IPV6_ADDR = 'ABCDEFabcdef0123456789:'
+
+REGEX_IPV4_COMPONENTS = re.compile(r"^([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)$")
+REGEX_IPV6_COMPONENTS = re.compile(r"^([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+):([0-9A-Fa-f]+)$")
 
 if hasattr(socket, "SO_RECV_ANYIF"):
     SO_RECV_ANYIF = socket.SO_RECV_ANYIF

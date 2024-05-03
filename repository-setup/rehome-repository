@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
+import argparse
 import configparser
 import os
 import platform
-import shutil
 import sys
 import subprocess
 
 PROJECT_NAME="(Not Set)"
+REPOSITORY_NAME="(Not Set)"
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 THIS_MODULE = sys.modules[__name__]
@@ -15,7 +16,15 @@ THIS_MODULE = sys.modules[__name__]
 REPOSITORY_FOLDER = os.path.abspath(os.path.join(THIS_DIR, ".."))
 REPOSITORY_CONFIG_FILE = os.path.abspath(os.path.join(THIS_DIR, "repository-config.ini"))
 REPOSITORY_CACHE_FOLDER = os.path.abspath(os.path.join(REPOSITORY_FOLDER, ".cache"))
+REPOSITORY_ENVIRONMENT_FILE = os.path.join(REPOSITORY_FOLDER, ".env")
+REPOSITORY_SERVICE_FOLDER = os.path.abspath(os.path.join(REPOSITORY_FOLDER, "service"))
 REPOSITORY_SOURCE_FOLDER = os.path.abspath(os.path.join(REPOSITORY_FOLDER, "source"))
+
+REPOSITORY_PACKAGES_FOLDER = os.path.abspath(os.path.join(REPOSITORY_FOLDER, "source", "packages"))
+REPOSITORY_TOOLS_FOLDER = os.path.abspath(os.path.join(REPOSITORY_FOLDER, "source", "tools"))
+
+HOME_FOLDER = os.path.expanduser("~")
+CONFIG_FOLDER = os.path.join(HOME_FOLDER, "mjr")
 
 WORKSPACES_FOLDER = os.path.join(REPOSITORY_FOLDER, "workspaces")
 
@@ -31,6 +40,9 @@ if os.path.exists(REPOSITORY_CONFIG_FILE):
         if "PROJECT_NAME" in default_config:
             PROJECT_NAME = default_config["PROJECT_NAME"]
 
+        if "REPOSITORY_NAME" in default_config:
+            REPOSITORY_NAME = default_config["REPOSITORY_NAME"]
+
         if "PYTHON_VERSION" in default_config:
             PYTHON_VERSION = default_config["PYTHON_VERSION"]
 
@@ -38,14 +50,27 @@ if os.path.exists(REPOSITORY_CONFIG_FILE):
 if PYTHON_VERSION is None:
     PYTHON_VERSION = "python{}.{}".format(*(platform.python_version_tuple()[:2]))
 
-pyres = subprocess.run("{} -c \"print('test')\"".format(PYTHON_VERSION), shell=True)
+pyres = None
+if platform.system() != "Windows":
+    pyres = subprocess.run("{} -c \"print('test')\"".format(PYTHON_VERSION), shell=True)
+else:
+    pyres = subprocess.run("python -c \"print('test')\"", shell=True)
+    
 if pyres.returncode != 0:
     print("The required python version '{}' does not appear to be installed.".format(PYTHON_VERSION), file=sys.stderr)
     exit(1)
 
 VENV_FOLDER = os.path.join(REPOSITORY_FOLDER, ".venv")
 VENV_BIN_FOLDER = os.path.join(VENV_FOLDER, "bin")
-VENV_SITEPACKAGES_FOLDER = os.path.join(VENV_FOLDER, "lib", PYTHON_VERSION, "site-packages")
+VENV_PYTHON_BINARY = os.path.join(VENV_BIN_FOLDER, "python")
+VENV_ACTIVATE_SCRIPT = os.path.join(VENV_BIN_FOLDER, "activate")
+
+
+VENV_SITEPACKAGES_FOLDER = None
+if platform.system() != "Windows":
+    VENV_SITEPACKAGES_FOLDER = os.path.join(VENV_FOLDER, "lib", PYTHON_VERSION, "site-packages")
+else:
+    VENV_SITEPACKAGES_FOLDER = os.path.join(VENV_FOLDER, "Lib", PYTHON_VERSION, "site-packages")
 
 
 def replace_macros(template_line):
@@ -53,17 +78,22 @@ def replace_macros(template_line):
         Perform a simple replacement any macros found in the template line passed to us.
     """
 
-    home = os.path.expanduser("~")
-
     filled_line = template_line
 
-    filled_line = filled_line.replace(r"${TMPLT:HOME}", home)
-    filled_line = filled_line.replace(r"${TMPLT:PYTHON_VERSION}", PYTHON_VERSION)
-    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_FOLDER}", REPOSITORY_FOLDER)
-    filled_line = filled_line.replace(r"${TMPLT:VENV_FOLDER}", VENV_FOLDER)
+    filled_line = filled_line.replace(r"${TMPLT:HOME}", HOME_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:HOME_CONFIG}", CONFIG_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:PYTHON_VERSION}", PYTHON_VERSION.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_FOLDER}", REPOSITORY_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_ENVIRONMENT_FILE}", REPOSITORY_ENVIRONMENT_FILE.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_PACKAGES_FOLDER}", REPOSITORY_PACKAGES_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_SERVICE_FOLDER}", REPOSITORY_PACKAGES_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:REPOSITORY_TOOLS_FOLDER}", REPOSITORY_TOOLS_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:VENV_FOLDER}", VENV_FOLDER.replace("\\", "\\\\"))
     filled_line = filled_line.replace(r"${TMPLT:VENV_BIN_FOLDER}", VENV_BIN_FOLDER)
-    filled_line = filled_line.replace(r"${TMPLT:VENV_SITEPACKAGES_FOLDER}", VENV_SITEPACKAGES_FOLDER)
-    filled_line = filled_line.replace(r"${TMPLT:WORKSPACES_FOLDER}", WORKSPACES_FOLDER)
+    filled_line = filled_line.replace(r"${TMPLT:VENV_PYTHON_BINARY}", VENV_PYTHON_BINARY.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:VENV_ACTIVATE_SCRIPT}", VENV_ACTIVATE_SCRIPT.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:VENV_SITEPACKAGES_FOLDER}", VENV_SITEPACKAGES_FOLDER.replace("\\", "\\\\"))
+    filled_line = filled_line.replace(r"${TMPLT:WORKSPACES_FOLDER}", WORKSPACES_FOLDER.replace("\\", "\\\\"))
 
     return filled_line
 
@@ -78,13 +108,14 @@ def generate_python_path():
 
     #TODO: Add any PYTHONPATH customizations here.
 
-    python_path = "{}/packages:{}/testroots/testplus:{}".format(
+    python_path = "{}/packages:{}/service:{}/testroots/testplus:{}".format(
+        REPOSITORY_SOURCE_FOLDER,
         REPOSITORY_SOURCE_FOLDER,
         REPOSITORY_SOURCE_FOLDER,
         VENV_SITEPACKAGES_FOLDER)
     return python_path
 
-def generate_devemopment_env_file():
+def generate_development_env_file():
 
     env_file = "{}/.env".format(REPOSITORY_FOLDER)
     with open(env_file, 'w') as envf:
@@ -138,9 +169,19 @@ def generate_vscode_workspace_files():
 
 def rehome_repository_main():
 
+    parser = argparse.ArgumentParser(
+                    prog='rehome-repository',
+                    description='Configures a repository for operations in a new location.')
+
+    parser.add_argument('--skip-workspaces', default=False, dest='skip_workspaces', action='store_true',
+        help="Indicates that VS Code workspaces should not be created.")
+    args = parser.parse_args()
+
     generate_directories()
-    generate_devemopment_env_file()
-    generate_vscode_workspace_files()
+    generate_development_env_file()
+
+    if not args.skip_workspaces:
+        generate_vscode_workspace_files()
 
     return
 

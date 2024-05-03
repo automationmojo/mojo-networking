@@ -37,13 +37,9 @@ def customize_activation_script(activate_script: str, env_file: str, cli_alias: 
             asf.write(LNSEP)
             asf.write(LNSEP)
 
-            print("DEBUG:")
             cli_alias_len = len(cli_alias)
-            print(f"cli_alias_len={cli_alias_len}")
-
             cli_entry_point_script_len = len(cli_entry_point_script)
-            print(f"cli_entry_point_script_len={cli_entry_point_script_len}")
-
+            
             # Check to see if we have a custom commandline to setup
             if (cli_alias is not None) and (cli_alias_len > 0) and (cli_entry_point_script is not None) and (cli_entry_point_script_len > 0):
 
@@ -63,21 +59,14 @@ def customize_activation_script(activate_script: str, env_file: str, cli_alias: 
 
 def normalize_variable_value(val: str):
 
-    print("DEBUG")
-    print(f"val={val}")
     val = val.strip()
-    print(f"val={val}")
-
+    
     if (val.startswith('"') and val.endswith('"')) or  (val.startswith("'") and val.endswith("'")):
-        
-        print(f"val={val}")
 
         if len(val) > 2:
             val = val[1: -1]
         else:
             val = ""
-
-    print(f"val={val}")
 
     return val
 

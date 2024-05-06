@@ -125,6 +125,11 @@ def generate_development_env_file():
         python_path = generate_python_path()
         envf.write("PYTHONPATH=\"{}\"".format(python_path))
         envf.write(os.linesep)
+        envf.write(os.linesep)
+        
+        envf.write('REPOSITORY_FOLDER="{}"'.format(REPOSITORY_FOLDER))
+        envf.write(os.linesep)
+        envf.write(os.linesep)
 
         #TODO: Add the setting of any other '.env' environment variables here.
 
@@ -187,5 +192,3 @@ def rehome_repository_main():
 
 if __name__ == "__main__":
     rehome_repository_main()
-
-

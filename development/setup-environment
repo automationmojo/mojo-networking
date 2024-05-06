@@ -46,7 +46,7 @@ def customize_activation_script(activate_script: str, env_file: str, cli_alias: 
                 # We were given both cli_alias and cli_entry_point
                 asf.write(f"# Create an alias for the " + cli_alias + f" command{LNSEP}")
                 asf.write("function " + cli_alias + "() {" + LNSEP)
-                asf.write(f"    {venv_python} {cli_entry_point_script}{LNSEP}")
+                asf.write(f"    {venv_python} {cli_entry_point_script} $@ {LNSEP}")
                 asf.write("}" + LNSEP)
                 asf.write("export -f " + cli_alias)
 
@@ -210,7 +210,7 @@ def setup_environment_main():
                 print(errmsg, file=sys.stderr)
                 exit(1)
 
-            command = f"poetry install {EXTRA_POETRY_SETUP_FLAGS}"
+            command = f"poetry install --no-root {EXTRA_POETRY_SETUP_FLAGS}"
             status = run_cmd(command)
             if status != 0:
                 errmsg_lines = [

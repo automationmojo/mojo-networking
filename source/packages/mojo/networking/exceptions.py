@@ -39,7 +39,7 @@ class HTTPRequestError(ProtocolError):
 
 def raise_for_http_status(context: str, response: requests.Response, details: Optional[dict]=None, allow_redirects: bool=False):
     """
-        Raises an :class:`AKitHTTPRequestError` if an HTTP response error occured.
+        Raises an :class:`HTTPRequestError` if an HTTP response error occured.
     """
 
     status_code = response.status_code

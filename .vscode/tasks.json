@@ -36,6 +36,18 @@
             "type": "shell",
             "command": "${workspaceFolder}/development/setup-environment",
             "problemMatcher": []
+        },
+        {
+            "label": "Environment (Win) - Reset",
+            "type": "shell",
+            "command": "python ${workspaceFolder}/development/setup-environment reset",
+            "problemMatcher": []
+        },
+        {
+            "label": "Environment (Win) - Setup",
+            "type": "shell",
+            "command": "python ${workspaceFolder}/development/setup-environment",
+            "problemMatcher": []
         }
     ]
 }

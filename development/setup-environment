@@ -200,6 +200,9 @@ def setup_environment_main():
         if not os.path.exists(ACTIVATE_SCRIPT):
             
             command = f"poetry env use {PYTHON_VERSION}"
+            if platform.system() == "Windows":
+                command = f"poetry env use python"
+
             status = run_cmd(command)
             if status != 0:
                 errmsg_lines = [

@@ -26,7 +26,7 @@ from mojo.networking.interfaces import get_ipv4_address
 from mojo.networking.interfaces import get_ipv6_address
 
 
-def create_multicast_socket(multicast_addr: str, port: int, bind_addr: str='', family: socket.AddressFamily = socket.AF_INET,
+def create_multicast_socket(multicast_addr: str, port: int, *, bind_addr: str='0.0.0.0', family: socket.AddressFamily = socket.AF_INET,
     ttl: Optional[int] = None, loop: Optional[int] = None, timeout: Optional[float] = None, apple_p2p: bool = False) -> socket.socket:
     """
         Create a socket for listening for multi-cast packets sent to the specified group on the specified interface
@@ -50,13 +50,12 @@ def create_multicast_socket(multicast_addr: str, port: int, bind_addr: str='', f
 
     """
 
-    bind_addr = '0.0.0.0'
     sock = None
 
     if family == socket.AF_INET:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     elif family == socket.AF_INET6:
-        sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     else:
         raise RuntimeError("Socket family not supported. family=%r" % family) from None
 
@@ -98,12 +97,12 @@ def create_multicast_socket(multicast_addr: str, port: int, bind_addr: str='', f
     if timeout is not None:
         sock.settimeout(timeout)
 
-    sock.bind((bind_addr, port))
-
     # We also need to tell the Kernel to bind the INBOUND traffic destined for the multi-cast
     # group to the address for this interface, so we receive responses
     member_in = socket.inet_aton(multicast_addr) + socket.inet_aton(bind_addr)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, member_in)
+
+    sock.bind((bind_addr, port))
 
     return sock
 

@@ -180,7 +180,10 @@ def setup_environment_main():
     # -------------------------------------------------------------------------------------------
     if len(sys.argv) > 1 and sys.argv[1] == "reset":
         if os.path.exists(VIRTUAL_ENV_DIR):
-            shutil.rmtree(VIRTUAL_ENV_DIR, ignore_errors=False)
+            if platform.system() == "Windows":
+                os.system(f'rmdir /S /Q "{VIRTUAL_ENV_DIR}"')
+            else:
+                shutil.rmtree(VIRTUAL_ENV_DIR, ignore_errors=False)
         if os.path.exists(INITIALIZED_FILE):
             os.remove(INITIALIZED_FILE)
 

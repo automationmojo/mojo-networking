@@ -21,9 +21,9 @@ import errno
 import socket
 import struct
 
-import asyncio
 
 from mojo.networking.constants import IPPROTO_IPV6, SO_RECV_ANYIF
+
 
 def create_unicast_socket(target_addr: str, port: int, family: socket.AddressFamily = socket.AF_INET,
     ttl: Optional[int] = None, loop: Optional[int] = None, timeout: Optional[float] = None, apple_p2p: bool = False) -> socket.socket:

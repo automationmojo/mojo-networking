@@ -125,6 +125,30 @@ files = [
 ]
 
 [[package]]
+name = "mojo-errors"
+version = "2.0.1"
+description = "Automation Mojo Errors Module"
+category = "main"
+optional = false
+python-versions = "<4.0,>=3.9"
+files = [
+    {file = "mojo_errors-2.0.1-py3-none-any.whl", hash = "sha256:4b2e8d8e0cff05f8acce64397a11a0670e17e567ce5175b1f2f1c6a82ef00945"},
+    {file = "mojo_errors-2.0.1.tar.gz", hash = "sha256:6620509734e78dd09706e483afc4efeef32ca11cbaf690d5d6c375ef5fa0e847"},
+]
+
+[[package]]
+name = "mojo-waiting"
+version = "2.0.0"
+description = "Automation Mojo Waiting Module"
+category = "main"
+optional = false
+python-versions = "<4.0,>=3.9"
+files = [
+    {file = "mojo_waiting-2.0.0-py3-none-any.whl", hash = "sha256:49b57a2cd20e83e77952ae47651709227c3913b5bec0cbb55971c6c6557052c3"},
+    {file = "mojo_waiting-2.0.0.tar.gz", hash = "sha256:e23c6142b6b06ce5719e6a79e2e2b7e93300c48a6adeb8b36cdf4cf356ece29f"},
+]
+
+[[package]]
 name = "netifaces"
 version = "0.11.0"
 description = "Portable network interface information."
@@ -207,4 +231,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<4.0"
-content-hash = "916fc2d66b2514ef9290bcec6f55909a802f14229ce79e32a94cc5caeba5205e"
+content-hash = "7ec1f3f9ffbb46fd84973bd9e9536f448bed53908435c715947d3a8b72012b84"

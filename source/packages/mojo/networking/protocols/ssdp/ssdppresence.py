@@ -531,7 +531,7 @@ class SsdpPresence:
         self._lock.acquire()
         try:
             if self._presence_sock is None:
-                self._presence_sock: socket.socket = create_multicast_socket(SsdpProtocol.MULTICAST_ADDRESS, SsdpProtocol.PORT, family=socket.AF_INET, ttl=self._ttl)
+                self._presence_sock: socket.socket = create_multicast_socket(self._multicast_address, self._multicast_port, family=socket.AF_INET, ttl=self._ttl)
             
             sock = self._presence_sock
         finally:
@@ -558,7 +558,7 @@ class SsdpPresence:
 
         self._running = True
 
-        self._presence_sock: socket.socket = create_multicast_socket(SsdpProtocol.MULTICAST_ADDRESS, SsdpProtocol.PORT, family=socket.AF_INET, ttl=self._ttl)
+        self._presence_sock: socket.socket = create_multicast_socket(self._multicast_address, self._multicast_port, family=socket.AF_INET, ttl=self._ttl)
 
         sgate.set()
 

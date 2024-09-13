@@ -24,6 +24,8 @@ repository = "https://github.com/automationmojo/mojo-networking"
 python = ">=3.9,<4.0"
 netifaces = "^0.11.0"
 requests = ">=2.31.0 <3.0.0"
+mojo-waiting = ">=2.0.0 <2.1.0"
+mojo-errors = "^2.0.1"
 
 [tool.poetry.group.dbio.dependencies]
 

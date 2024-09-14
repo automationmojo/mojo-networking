@@ -171,6 +171,7 @@ class DnsInboundMessage:
 
             rtype, rclass = self._read_type_and_class()
             ttl = self._read_ttl()
+            length = self._read_unsigned_short()
 
             if rtype == DnsRecordType.SRV:
                 priority = self._read_unsigned_short()
@@ -189,7 +190,6 @@ class DnsInboundMessage:
                     server,
                 )
             else:
-                length = self._read_unsigned_short()
 
                 rec = None  # type: Optional[DnsRecord]
                 if rtype == DnsRecordType.A:
@@ -405,6 +405,6 @@ class DnsInboundMessage:
 
 if __name__ == "__main__":
 
-    packet = b'\x00\x00\x84\x00\x00\x01\x00\x05\x00\x00\x00\x00\t_services\x07_dns-sd\x04_udp\x05local\x00\x00\x0c\x00\x01\xc0\x0c\x00\x0c\x00\x01\x00\x00\x00\n\x00\x0c\x04_ssh\x04_tcp\xc0#\xc0\x0c\x00\x0c\x00\x01\x00\x00\x00\n\x00\x0c\t_sftp-ssh\xc0?\xc0\x0c\x00\x0c\x00\x01\x00\x00\x00\n\x00\x0b\x08_airplay\xc0?\xc0\x0c\x00\x0c\x00\x01\x00\x00\x00\n\x00\x08\x05_raop\xc0?\xc0\x0c\x00\x0c\x00\x01\x00\x00\x00\n\x00\x12\x0f_companion-link\xc0?'
+    packet = b"\x00\x00\x84\x00\x00\x00\x00\x02\x00\x00\x00\x04'HP Color LaserJet Pro M478f-9f [834BAB]\x04_ipp\x04_tcp\x05local\x00\x00\x10\x80\x01\x00\x00\x11\x94\x02\xda\ttxtvers=15adminurl=http://HP0068EB834BAB.local./#hId-pgAirPrint\x05note=\x0bpriority=20\x08qtotal=1\x07TLS=1.2\x0crp=ipp/print)UUID=5f1123e1-7b3c-5b59-698a-e4916b1b0e1a(product=(HP Color LaserJet Pro M478f-9f)!ty=HP Color LaserJet Pro M478f-9f\nusb_MFG=HP#usb_MDL=Color LaserJet Pro M478f-9f\x07Color=T\x08Duplex=T\xfepdl=application/vnd.hp-PCL,application/vnd.hp-PCLXL,application/postscript,application/msword,application/pdf,image/jpeg,image/urf,image/pwg-raster,application/PCLm,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.m\x11PaperMax=legal-A4dURF=CP1,MT1-2-8-9-10-11,PQ3-4-5,RS600,SRGB24,OB10,W8,DEVW8,DEVRGB24,ADOBERGB24,DM3,IS19-1-2,V1.4,FN3\rkind=document\x06Scan=T\x14mopria-certified=2.0\x0erfo=ipp/faxout\x05Fax=T\xc0\x0c\x00!\x80\x01\x00\x00\x00x\x00\x17\x00\x00\x00\x00\x02w\x0eHP0068EB834BAB\xc0>\xc3;\x00\x01\x80\x01\x00\x00\x00x\x00\x04\xac\x10\x01\x03\xc3;\x00\x1c\x80\x01\x00\x00\x00x\x00\x10\xfe\x80\x00\x00\x00\x00\x00\x00\x02h\xeb\xff\xfe\x83K\xac\xc0\x0c\x00/\x80\x01\x00\x00\x11\x94\x00\t\xc0\x0c\x00\x05\x00\x00\x80\x00@\xc3;\x00/\x80\x01\x00\x00\x00x\x00\x08\xc3;\x00\x04@\x00\x00\x08"
 
     msg = DnsInboundMessage(packet)

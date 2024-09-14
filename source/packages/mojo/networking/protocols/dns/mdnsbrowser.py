@@ -83,14 +83,14 @@ class MdnsBrowser:
 
         sgate.clear()
         
-        self._presence_thread = threading.Thread(target=self._presence_thread_entry, name="mojo-ssdp-presence", args=(sgate,), daemon=True)
+        self._presence_thread = threading.Thread(target=self._mdns_presence_thread_entry, name="mojo-mdns-presence", args=(sgate,), daemon=True)
         self._presence_thread.start()
 
         sgate.wait()
 
         sgate.clear()
         
-        self._msearch_thread = threading.Thread(target=self._msearch_thread_entry, name="mojo-ssdp-search", args=(sgate,), daemon=True)
+        self._msearch_thread = threading.Thread(target=self._mdns_search_thread_entry, name="mojo-mdns-search", args=(sgate,), daemon=True)
         self._msearch_thread.start()
 
         sgate.wait()
@@ -166,7 +166,7 @@ class MdnsBrowser:
 
         from_ip = from_endpoint[0]
 
-        msg_in = DnsInboundMessage(msg_bytes)
+        msg_in = DnsInboundMessage(msg_bytes, from_endpoint)
 
         return
 
@@ -174,7 +174,23 @@ class MdnsBrowser:
         
         from_ip = from_endpoint[0]
 
-        msg_in = DnsInboundMessage(msg_bytes)
+        msg_resp = DnsInboundMessage(msg_bytes, source_endpoint=from_endpoint)
+
+        for dns_answer in msg_resp.answers:
+
+            rclass = dns_answer.rclass
+
+            if rclass == DnsRecordClass.IN:
+                akey = dns_answer.key
+                aname = dns_answer.name
+
+                rtype = dns_answer.rtype
+                if rtype == DnsRecordType.PTR:
+                    alias = dns_answer.alias
+                    print(f"Search: Answer ({from_endpoint}) rtype={rtype.name} rclass={rclass.name} key={akey} name={aname} alias={alias}")   
+
+            else:
+                print(f"Search: Answer ({from_endpoint}) rtype={rtype.name} rclass={rclass}")
 
         return
 
@@ -214,7 +230,7 @@ class MdnsBrowser:
             
         return sock
 
-    def _presence_thread_entry(self, sgate: threading.Event):
+    def _mdns_presence_thread_entry(self, sgate: threading.Event):
 
         self._running = True
 
@@ -245,7 +261,7 @@ class MdnsBrowser:
 
         return
 
-    def _msearch_thread_entry(self, sgate: threading.Event):
+    def _mdns_search_thread_entry(self, sgate: threading.Event):
 
         self._running = True
 

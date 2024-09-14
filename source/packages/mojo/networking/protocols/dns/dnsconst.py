@@ -55,7 +55,7 @@ class DnsQuestionType(enum.IntEnum):
 
 
 @enum.unique
-class DnsRecordClass(enum.IntEnum):
+class DnsRecordClass(enum.IntFlag):
     """
         Enumeration for the DNS record class.
     """
@@ -177,6 +177,9 @@ HAS_ASCII_CONTROL_CHARS = re.compile(r'[\x00-\x1f\x7f]')
 
 MAX_MSG_TYPICAL = 1460  # unused
 MAX_MSG_ABSOLUTE = 8966
+
+DNS_COMP_MASK = 0xC0
+DNS_OFFSET_MASK = 0x3F
 
 class DnsKnownServiceTypes:
     AIRTUNES = "AirTunes Remote Audio"

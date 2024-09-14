@@ -14,6 +14,7 @@ __credits__ = []
 
 from typing import Optional, Union, TYPE_CHECKING
 
+import math
 import time
 
 from mojo.networking.protocols.dns.dnsconst import (
@@ -67,7 +68,7 @@ class DnsRecord:
         self._key = name.lower()
         self._name = name
         self._rtype = rtype
-        self._rclass = (rclass & DnsRecordClass.MASK)
+        self._rclass = DnsRecordClass(rclass & DnsRecordClass.MASK)
         self._ttl = ttl
 
         self._unique = (rclass & DnsRecordClass.UNIQUE) != 0
@@ -79,31 +80,31 @@ class DnsRecord:
         return
 
     @property
-    def key(self):
+    def key(self) -> str:
         return self._key
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @property
-    def rclass(self):
+    def rclass(self) -> DnsRecordClass:
         return self._rclass
 
     @property
-    def rtype(self):
+    def rtype(self) -> DnsRecordType:
         return self._rtype
 
     @property
-    def ttl(self):
+    def ttl(self) -> int:
         return self._ttl
 
     @property
-    def unique(self):
+    def unique(self) -> bool:
         return self._unique
 
     @property
-    def updated(self):
+    def updated(self) -> bool:
         return self._updated
 
     def as_dns_string(self, other: Optional[str] = None) -> str:
@@ -113,7 +114,7 @@ class DnsRecord:
         remaining_ttl = int(self.get_remaining_ttl(current_time_millis()))
         other = "%s/%s,%s" % (self.ttl, remaining_ttl, other)
         
-        dnsstr = "%s[%s,%s" % ('record', self._rtype.name, self._rclass.name)
+        dnsstr = "%s[%s,%s" % ('record', self._rtype, self._rclass)
 
         if self._unique:
             dnsstr += "-unique,"
@@ -129,11 +130,11 @@ class DnsRecord:
 
         return dnsstr
 
-    def get_remaining_ttl(self, now: float) -> float:
+    def get_remaining_ttl(self, now: float) -> int:
         """
             Gets the remaining time to live (TTL) in seconds.
         """
-        rval = max(0, (self._when_expires - now) / 1000)
+        rval = max(0, math.floor((self._when_expires - now) / 1000))
         return rval
 
     def is_expired(self, now: Optional[float]) -> bool:
@@ -194,8 +195,8 @@ class DnsRecord:
         errmsg = "The 'DnsRecord.write' method must be implemented in derived classes."
         raise NotImplementedError(errmsg)
 
-    def _compute_time_marker(self, percent: int) -> float:
-        marker = self._updated + (percent * self._ttl * 10)
+    def _compute_time_marker(self, percent: int) -> int:
+        marker = math.floor(self._updated + (percent * self._ttl * 10))
         return marker
 
     def __eq__(self, other: 'DnsRecord') -> bool:

@@ -11,8 +11,6 @@ __copyright__ = "Copyright 2020, Myron W Walker"
 __credits__ = []
 
 
-import struct
-
 from mojo.networking.protocols.dns.dnsconst import DnsRecordClass, DnsRecordType
 from mojo.networking.protocols.dns.dnsrecord import DnsRecord
 

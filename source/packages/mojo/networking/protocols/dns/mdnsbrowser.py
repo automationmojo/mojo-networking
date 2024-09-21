@@ -3,12 +3,18 @@ __author__ = "Myron Walker"
 __copyright__ = "Copyright 2020, Myron W Walker"
 __credits__ = []
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 import copy
 import socket
 import threading
 import time
+import weakref
+
+from datetime import datetime, timedelta
+from types import TracebackType
+
+from mojo.errors.exceptions import SemanticError
 
 from mojo.networking.multicast import create_multicast_socket
 from mojo.networking.constants import MDNS_GROUP_ADDR, MDNS_GROUP_ADDR6, MDNS_PORT
@@ -21,9 +27,68 @@ from mojo.networking.protocols.dns.dnsquestion import DnsQuestion
 from mojo.networking.protocols.dns.dnsconst import DnsRecordType, DnsRecordClass
 
 
+DEFAULT_SEARCH_TIMEOUT = 30.0
+DEFAULT_RETRY_INTERVAL = 2.0
+
+
 class MdnsServiceInfo:
     """
     """
+
+
+class MdnsBrowseSearchWindow:
+    """
+    """
+
+    def __init__(self, browser: "MdnsBrowseSearchWindow", id: int):
+        """
+            Constructs a :class:`MdnsBrowseWindow` object used to collect and store search results.
+        """
+        self._browser_ref = weakref.ref(browser)
+        self._id = id
+        self._span = None
+        self._start = None
+        self._stop = None
+        return
+
+    @property
+    def browser(self) -> "MdnsBrowser":
+        return self._browser_ref()
+    
+    @property
+    def id(self) -> int:
+        return self._id
+
+    @property
+    def span(self) -> float:
+        return self._span
+
+    def begin(self, span: float):    
+        self._span = span
+        self._start = datetime.now()
+        self._stop = self._start + timedelta(seconds=self._span)
+        return
+
+    def wait_for_results(self, interval: float=DEFAULT_RETRY_INTERVAL):
+
+        if self._start is None:
+            errmsg = "You must call 'begin' before calling 'wait'"
+            raise SemanticError(errmsg)
+
+        while True:
+        
+            now = datetime.now()
+            if now >= self._stop:
+                # We always wait a specific amount of time, so its not an error to timeout, we just exit
+                break
+
+            time.sleep(interval)
+    
+        self.browser.close_search_window(self)
+
+        return
+
+
 
 class MdnsBrowser:
 
@@ -49,6 +114,11 @@ class MdnsBrowser:
         self._active_services = {}
 
         self._services_by_device = {}
+
+        self._search_id = 1
+        self._search_windows = {}
+
+        self._known_service_classes = set()
         return
     
     @property
@@ -74,6 +144,15 @@ class MdnsBrowser:
 
         return rtnval
 
+    @property
+    def known_service_classes(self) -> List[str]:
+        rtnval = list(self._known_service_classes)
+        return rtnval
+
+    def close_search_window(self, search_window: MdnsBrowseSearchWindow):
+        del self._search_windows[search_window.id]
+        return
+
     def start(self):
         
         if self._running:
@@ -97,13 +176,15 @@ class MdnsBrowser:
 
         return
 
-    def discover_service_classes(self, domain: str = "local", custom_headers: Optional[Dict[str, str]] = None):
+    def discover_service_classes(self, domain: str = "local", span: float = DEFAULT_SEARCH_TIMEOUT, custom_headers: Optional[Dict[str, str]] = None) -> MdnsBrowseSearchWindow:
 
         svc_type = f"_services._dns-sd._udp.{domain}"
 
+        bsearch_window = self._create_search_window(span)
+        
         questions = DnsQuestion(svc_type, DnsRecordType.PTR, DnsRecordClass.IN)
 
-        mdns_msg = DnsOutboundMessage(DEFAULT_DNS_FLAGS_QUERY)
+        mdns_msg = DnsOutboundMessage(DEFAULT_DNS_FLAGS_QUERY, id=bsearch_window.id)
         mdns_msg.add_question(questions)
 
         sock = self._get_search_socket()
@@ -126,7 +207,7 @@ class MdnsBrowser:
                 self._lock.release()
             raise
 
-        return
+        return bsearch_window
 
     def discover_services(self, service_classes: List[str] = None, domain: str = "local", custom_headers: Optional[Dict[str, str]] = None):
 
@@ -136,29 +217,30 @@ class MdnsBrowser:
         if not self._running:
             raise RuntimeError("The SSDP Scanner must be running before a discovery can be triggered.  Call 'start'.")
 
-        questions = DnsQuestion(service_class, DnsRecordType.PTR, DnsRecordClass.IN)
+        for svc_class in service_classes:
+            questions = DnsQuestion(svc_class, DnsRecordType.PTR, DnsRecordClass.IN)
 
-        mdns_msg = DnsOutboundMessage(DEFAULT_DNS_FLAGS_QUERY)
-        mdns_msg.add_question(questions)
-        
-        sock = self._get_search_socket()
+            mdns_msg = DnsOutboundMessage(DEFAULT_DNS_FLAGS_QUERY)
+            mdns_msg.add_question(questions)
+            
+            sock = self._get_search_socket()
 
-        try:
-            msg_packets = mdns_msg.packets
-            for packet in msg_packets:
-                sock.sendto(packet, (self._multicast_address, self._multicast_port))
-        except OSError as serr:
-            # If we get an OSError while sending, our socket is likely invalid and we need
-            # to force the socket to be re-freshed
-            self._lock.acquire()
             try:
-                if sock is not None:
-                    sock.close()
+                msg_packets = mdns_msg.packets
+                for packet in msg_packets:
+                    sock.sendto(packet, (self._multicast_address, self._multicast_port))
+            except OSError as serr:
+                # If we get an OSError while sending, our socket is likely invalid and we need
+                # to force the socket to be re-freshed
+                self._lock.acquire()
+                try:
+                    if sock is not None:
+                        sock.close()
 
-                self._msearch_sock = None
-            finally:
-                self._lock.release()
-            raise
+                    self._msearch_sock = None
+                finally:
+                    self._lock.release()
+                raise
 
         return
 
@@ -167,6 +249,28 @@ class MdnsBrowser:
         from_ip = from_endpoint[0]
 
         msg_in = DnsInboundMessage(msg_bytes, from_endpoint)
+        msg_id = msg_in.id
+
+        for dns_answer in msg_in.answers:
+
+            rclass = dns_answer.rclass
+
+            if rclass == DnsRecordClass.IN:
+                akey = dns_answer.key
+                aname = dns_answer.name
+                rtype = dns_answer.rtype
+
+                if rtype == DnsRecordType.PTR:
+                    alias = dns_answer.alias
+                    if aname == "_services._dns-sd._udp.local.":
+                        self._known_service_classes.add(alias)
+
+                    print(f"Presence: Answer ({from_endpoint}) id={msg_id} rtype={rtype.name} rclass={rclass.name} key={akey} name={aname} alias={alias}")
+                else:
+                    print(f"Presence: Answer ({from_endpoint}) id={msg_id} rtype={rtype.name} rclass={rclass.name} key={akey} name={aname}")
+
+            else:
+                print(f"Presence: Answer ({from_endpoint}) id={msg_id} rtype={rtype.name} rclass={rclass}")        
 
         return
 
@@ -176,6 +280,8 @@ class MdnsBrowser:
 
         msg_resp = DnsInboundMessage(msg_bytes, source_endpoint=from_endpoint)
 
+        msg_id = msg_resp.id
+
         for dns_answer in msg_resp.answers:
 
             rclass = dns_answer.rclass
@@ -183,14 +289,19 @@ class MdnsBrowser:
             if rclass == DnsRecordClass.IN:
                 akey = dns_answer.key
                 aname = dns_answer.name
-
                 rtype = dns_answer.rtype
+
                 if rtype == DnsRecordType.PTR:
                     alias = dns_answer.alias
-                    print(f"Search: Answer ({from_endpoint}) rtype={rtype.name} rclass={rclass.name} key={akey} name={aname} alias={alias}")   
+                    if aname == "_services._dns-sd._udp.local.":
+                        self._known_service_classes.add(alias)
+
+                    print(f"Search: Answer ({from_endpoint}) id={msg_id} rtype={rtype.name} rclass={rclass.name} key={akey} name={aname} alias={alias}")
+                else:
+                    print(f"Search: Answer ({from_endpoint}) id={msg_id} rtype={rtype.name} rclass={rclass.name} key={akey} name={aname}")
 
             else:
-                print(f"Search: Answer ({from_endpoint}) rtype={rtype.name} rclass={rclass}")
+                print(f"Search: Answer ({from_endpoint}) id={msg_id} rtype={rtype.name} rclass={rclass}")
 
         return
 
@@ -199,6 +310,15 @@ class MdnsBrowser:
         print(f"UPDATE SERVICE: context={context} status={status}")
 
         return
+
+    def _create_search_window(self, span: float) -> MdnsBrowseSearchWindow:
+        
+        bsearch_id = self._next_search_id() 
+        bwindow = MdnsBrowseSearchWindow(self, bsearch_id)
+        self._search_windows[bsearch_id] = bwindow
+        bwindow.begin(span)
+
+        return bwindow
 
     def _get_presence_socket(self) -> socket.socket:
 
@@ -293,15 +413,24 @@ class MdnsBrowser:
 
         return
 
+    def _next_search_id(self) -> int:
+        search_id = self._search_id
+        self._search_id += 1
+        return search_id
+
 
 if __name__ == "__main__":
 
     browser = MdnsBrowser()
     browser.start()
 
-    service_class = "_bose-passport.tcp"
+    bsearch_window = browser.discover_service_classes()
+    bsearch_window.wait_for_results()
 
-    browser.discover_service_classes()
+    service_classes = browser.known_service_classes
+    service_classes.append("_bose-passport.tcp")
+
+    browser.discover_services(service_classes)
 
     while True:
         print("blah")
